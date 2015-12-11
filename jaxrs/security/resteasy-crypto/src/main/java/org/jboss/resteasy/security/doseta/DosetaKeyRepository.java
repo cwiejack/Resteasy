@@ -78,6 +78,14 @@ public class DosetaKeyRepository implements KeyRepository
                InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(keyStorePath.trim());
                if (is == null) throw new RuntimeException(Messages.MESSAGES.unableToFindKeyStore(keyStorePath));
                keyStore = new KeyStoreKeyRepository(is, keyStorePassword);
+               try
+               {
+                  is.close();
+               }
+               catch (IOException e)
+               {
+                  throw new RuntimeException(e);
+               }
             }
          }
       }
@@ -202,7 +210,7 @@ public class DosetaKeyRepository implements KeyRepository
       if (entry == null) return null;
       if (entry.isStale())
       {
-         privateCache.remove(entry, entry);
+         privateCache.remove(alias, entry);
          return null;
       }
       return entry.key;
@@ -214,7 +222,7 @@ public class DosetaKeyRepository implements KeyRepository
       if (entry == null) return null;
       if (entry.isStale())
       {
-         publicCache.remove(entry, entry);
+         publicCache.remove(alias, entry);
          return null;
       }
       return entry.key;
@@ -291,6 +299,7 @@ public class DosetaKeyRepository implements KeyRepository
          Attributes attrs1 = dnsContext.getAttributes(alias, new String[]{"TXT"});
          javax.naming.directory.Attribute txtrecord = attrs1.get("txt");
          String record = txtrecord.get().toString();
+         dnsContext.close();
          if (LogMessages.LOGGER.isDebugEnabled()) LogMessages.LOGGER.debug(Messages.MESSAGES.dnsRecordFound(record));
          ParameterParser parser = new ParameterParser();
          parser.setLowerCaseNames(true);

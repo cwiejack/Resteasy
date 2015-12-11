@@ -18,9 +18,12 @@ import org.jboss.resteasy.util.GetRestful;
 import javax.ws.rs.container.ResourceContext;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.Configurable;
+import javax.ws.rs.core.Configuration;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.ext.Provider;
 import javax.ws.rs.ext.Providers;
+import javax.ws.rs.core.Feature;
+import javax.ws.rs.core.FeatureContext;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -128,6 +131,7 @@ public class ResteasyDeployment
 
       dispatcher.getDefaultContextObjects().putAll(defaultContextObjects);
       dispatcher.getDefaultContextObjects().put(Configurable.class, providerFactory);
+      dispatcher.getDefaultContextObjects().put(Configuration.class, providerFactory);
       dispatcher.getDefaultContextObjects().put(Providers.class, providerFactory);
       dispatcher.getDefaultContextObjects().put(Registry.class, registry);
       dispatcher.getDefaultContextObjects().put(Dispatcher.class, dispatcher);
@@ -512,6 +516,23 @@ public class ResteasyDeployment
                providers.add(obj);
                registered = true;
             }
+         }
+      }
+      if (config.getProperties() != null)
+      {
+         for (Map.Entry<String,Object> property : config.getProperties().entrySet())
+         {
+            final Map.Entry<String,Object> prop = property;
+            Object obj = new Feature() {
+
+                    @Override
+                    public boolean configure(FeatureContext featureContext) {
+                        featureContext = featureContext.property(prop.getKey(), prop.getValue());
+                        return featureContext.getConfiguration()
+                                .getProperties().containsKey(featureContext.getConfiguration().getProperties().containsKey(prop.getKey()));
+                    }
+                };
+            providers.add(0,obj);
          }
       }
       return registered;
